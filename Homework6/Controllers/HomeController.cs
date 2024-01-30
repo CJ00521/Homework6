@@ -23,6 +23,18 @@ namespace Homework6.Controllers
             return View();
         }
 
+        //public IActionResult First()
+        //{
+        //    return View();
+        //}
+
+        public IActionResult Register()
+        {
+            return View();
+        }
+
+
+
         public IActionResult Spot()
         {
             return View();

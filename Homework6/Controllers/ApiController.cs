@@ -1,7 +1,8 @@
-﻿using Homework6.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 //using MSIT155Site.Models;
+using Homework6.Models;
 using System.Text;
+using Homework6.Models.DTO;
 
 namespace MSIT155Site.Controllers
 {
@@ -15,13 +16,38 @@ namespace MSIT155Site.Controllers
 
         public IActionResult Index()
         {
+            ////延遲5秒
+            Thread.Sleep(5000);
+
+            //int x = 10;
+            //int y = 0;
+            //int z = x / y;
             return Content("Content 你好!!", "text/plain", Encoding.UTF8);
+        }
+
+        //public IActionResult Register(string name, int age = 28)
+        public IActionResult Register(UserDTO _user)
+        {
+            if (string.IsNullOrEmpty(_user.Name))
+            {
+                _user.Name = "guest";
+            }
+            return Content($"Hello {_user.Name}, {_user.Age}歲了, 電子郵件是 {_user.Email}", "text/plain", Encoding.UTF8);
         }
 
         public IActionResult First()
         {
+            
             return View();
         }
+
+
+        public IActionResult CheckAccountAction()
+        {
+
+            return View();
+        }
+
 
         public IActionResult Cities()
         {

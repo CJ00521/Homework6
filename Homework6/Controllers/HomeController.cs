@@ -33,7 +33,19 @@ namespace Homework6.Controllers
             return View();
         }
 
+        /////1/31 p64
+        public IActionResult Address()
+        {
+            return View();
+        }
 
+        /////1/31 p65
+        public IActionResult Avatar()
+        {
+            return View();
+        }
+
+      
 
         public IActionResult Spot()
         {

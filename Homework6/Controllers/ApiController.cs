@@ -4,15 +4,19 @@ using Homework6.Models;
 using System.Text;
 using Homework6.Models.DTO;
 using System.Linq;
+using System;
+using Microsoft.Identity.Client;
 
 namespace MSIT155Site.Controllers
 {
     public class ApiController : Controller
     {
         private readonly MyDBContext _context;
-        public ApiController(MyDBContext context)
+        private readonly IWebHostEnvironment _environment;
+        public ApiController(MyDBContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         public IActionResult Index()
@@ -27,14 +31,54 @@ namespace MSIT155Site.Controllers
         }
 
         //public IActionResult Register(string name, int age = 28)
-        public IActionResult Register(UserDTO _user)
+        // public IActionResult Register(UserDTO _user)
+        [HttpPost]
+        public IActionResult Register(Member _user, IFormFile Avatar)
         {
             if (string.IsNullOrEmpty(_user.Name))
             {
                 _user.Name = "guest";
             }
-            return Content($"Hello {_user.Name}, {_user.Age}歲了, 電子郵件是 {_user.Email}", "text/plain", Encoding.UTF8);
+            //todo
+            //1. 只允許上傳圖檔
+            //2. 圖檔最大2M
+            //3. 檔案名稱重複處理
+
+            //string uploadPath = @"C:\Shared\AjaxWorkspace\MSIT155Site\wwwroot\uploads\a.jpg";
+            string fileName = "empty.jpg";
+            if (Avatar != null)
+            {
+                fileName = Avatar.FileName;
+            }
+            string uploadPath = Path.Combine(_environment.WebRootPath, "uploads", fileName);
+
+            using (var fileStream = new FileStream(uploadPath, FileMode.Create))
+            {
+                Avatar?.CopyTo(fileStream);
+            }
+
+            // return Content($"Hello {_user.Name}, {_user.Age}歲了, 電子郵件是 {_user.Email}","text/plain", Encoding.UTF8);
+            //return Content($"{_user.Avatar?.FileName} - {_user.Avatar?.ContentType} - {_user.Avatar?.Length}");
+
+            //新增到資料庫
+            _user.FileName = fileName;
+            //轉成二進位
+            byte[]? imgByte = null;
+            using (var memoryStream = new MemoryStream())
+            {
+                Avatar?.CopyTo(memoryStream);
+                imgByte = memoryStream.ToArray();
+            }
+            _user.FileData = imgByte;
+
+
+            _context.Members.Add(_user);
+            _context.SaveChanges();
+
+
+            return Content(uploadPath);
         }
+
 
         public IActionResult First()
         {
@@ -64,12 +108,14 @@ namespace MSIT155Site.Controllers
             return Json(districts);
         }
 
-        //根據鄉鎮區名稱讀取路名//未,自
-        public IActionResult Road(string road)
+        //根據鄉鎮區名稱讀取路名//自練習
+        public IActionResult Roads(string siteId)
         {
-            var districts = _context.Addresses.Where(a => a.City == road).Select(a => a.SiteId).Distinct();
-            return Json(districts);
+            var roads = _context.Addresses.Where(a => a.SiteId == siteId).Select(c => c.Road).Distinct();
+
+            return Json(roads);
         }
+
 
         public IActionResult Avatar(int id = 1)
         {
@@ -85,6 +131,65 @@ namespace MSIT155Site.Controllers
 
             return NotFound();
         }
+
+        //景點資料2-1
+        [HttpPost]
+        public IActionResult Spots([FromBody] SearchDTO _search)
+        {
+            //根據分類編號搜尋
+            var spots = _search.CategoryId == 0 ? _context.SpotImagesSpots : _context.SpotImagesSpots.Where(s => s.CategoryId == _search.CategoryId);
+
+            //根據關鍵字搜尋
+            if (!string.IsNullOrEmpty(_search.Keyword))
+            {
+                spots = spots.Where(s => s.SpotTitle.Contains(_search.Keyword) || s.SpotDescription.Contains(_search.Keyword));
+            }
+
+            //排序
+            switch (_search.SortBy)
+            {
+                case "spotTitle":
+                    spots = _search.SortType == "asc" ? spots.OrderBy(s => s.SpotTitle) : spots.OrderByDescending(s => s.SpotTitle);
+                    break;
+                case "categoryId":
+                    spots = _search.SortType == "asc" ? spots.OrderBy(s => s.CategoryId) : spots.OrderByDescending(s => s.CategoryId);
+                    break;
+                default: //spotId
+                    spots = _search.SortType == "asc" ? spots.OrderBy(s => s.SpotId) : spots.OrderByDescending(s => s.SpotId);
+                    break;
+            }
+
+            //總共有幾筆
+            int totalCount = spots.Count();
+            //一頁幾筆資料
+            int pageSize = _search.PageSize ?? 9;
+            //計算總共有幾頁
+            int totalPages = (int)Math.Ceiling((decimal)totalCount / pageSize);
+            //目前第幾頁
+            int page = _search.Page ?? 1;
+
+
+            //分頁
+            spots = spots.Skip((page - 1) * pageSize).Take(pageSize);
+
+
+            //API回傳資料 p88
+            SpotsPagingDTO spotsPaging = new SpotsPagingDTO();
+            spotsPaging.TotalPages = totalPages;
+            spotsPaging.SpotsResult = spots.ToList();
+
+            //return Json(_search);
+            return Json(spotsPaging);
+
+        }
+
+        public IActionResult SpotTitle(string title) 
+        {
+            var titles = _context.Spots.Where(s => s.SpotTitle.Contains(title)).Select(s => s.SpotTitle).Take(8);
+            return Json(titles);
+
+        }
+
 
     }
 }

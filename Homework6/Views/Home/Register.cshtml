@@ -1,4 +1,4 @@
-﻿
+﻿View
 @{
     ViewData["Title"] = "Register";
 }
@@ -11,15 +11,28 @@
             <div class="mb-3">
                 <label for="userName" class="form-label">姓名：</label>
                 <input type="text" class="form-control" id="userName" name="Name">
-                <div class="alert alert-warning" id="divWarning"></div>
+                <div id="NameMesssage" class="alert alert-warning"></div>
             </div>
             <div class="mb-3">
                 <label for="UserEmail" class="form-label">電子郵件：</label>
                 <input type="email" class="form-control" id="UserEmail" name="Email">
             </div>
             <div class="mb-3">
+                <label for="Password" class="form-label">密碼：</label>
+                <input type="password" class="form-control" id="Password" name="Password">
+            </div>
+            <div class="mb-3">
+                <label for="ConfirmPassword" class="form-label">密碼確認：</label>
+                <input type="password" class="form-control" id="ConfirmPassword" name="ConfirmPassword">
+
+            </div>
+            <div class="mb-3">
                 <label for="userAge" class="form-label">年紀：</label>
                 <input type="number" class="form-control" id="userAge" name="Age">
+            </div>
+            <div class="mb-3">
+                <label for="formFile" class="form-label">頭像：</label>
+                <input class="form-control" type="file" id="formFile" name="avatar">
             </div>
 
             <button id="button1" type="submit" class="btn btn-primary">送出</button>
@@ -32,34 +45,25 @@
 
 @section Scripts {
     <script>
-        const btnSubmit = document.querySelector('#button1');
-        const txtName = document.querySelector('#userName');
-        const txtEmail = document.querySelector('#UserEmail');
-        const txtAge = document.querySelector('#userAge');
-        const divInfo = document.querySelector('#div1');
+        const btn = document.querySelector('#button1');
+        const theDiv = document.querySelector('#div1')
 
-        btnSubmit.addEventListener('click', async (event) => {
-            event.preventDefault(); //停止預設行為
-            // console.log(txtName.value);
-            // console.log(txtEmail.value);
-            // console.log(txtAge.value);
-
-            const url = `@Url.Content("~/api/register")?name=${txtName.value}&age=${txtAge.value}&email=${txtEmail.value}`;
-            const response = await fetch(url);
-            const data = await response.text();
-            divInfo.innerHTML = data;
-
+        btn.addEventListener('click', async (event) => {
+            event.preventDefault(); //防止預設行為的發生
+            const formData = new FormData(document.querySelector('#userForm'));
+            const url = '@Url.Content("~/api/register")'
+            const response = await fetch(url, {
+                body: formData,
+                method: 'POST',
+            })
+            const data = await response.text()
+            theDiv.innerHTML = data;
         })
 
 
-
-        // (async() => {
-        //  const url = '@Url.Content("~/api/register")?name=Tom&age=30&email=Tom@company.com';
-        //     const response = await fetch(url);
-        //     const data = await response.text();
-        //     console.log(data);
-
-        // })();
-
     </script>
 }
+
+
+
+
